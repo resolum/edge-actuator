@@ -1,0 +1,697 @@
+{
+ "config": [
+  {
+   "channel": 0,
+   "kind": "DOOR",
+   "mac": "AA:BB:CC:00:00:10",
+   "closedAngle": 0,
+   "openAngle": 90,
+   "settleMs": 700
+  },
+  {
+   "channel": 1,
+   "kind": "WINDOW",
+   "mac": "AA:BB:CC:00:00:11",
+   "closedAngle": 0,
+   "openAngle": 90,
+   "settleMs": 700
+  },
+  {
+   "channel": 2,
+   "kind": "CURTAIN",
+   "mac": "AA:BB:CC:00:00:12",
+   "closedAngle": 0,
+   "openAngle": 180,
+   "settleMs": 1200
+  },
+  {
+   "channel": 3,
+   "kind": "LIGHT",
+   "mac": "AA:BB:CC:00:00:13",
+   "closedAngle": 0,
+   "openAngle": 60,
+   "settleMs": 300
+  }
+ ],
+ "repeatSettleMs": 150,
+ "cases": [
+  {
+   "name": "abrir la puerta",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "a1",
+      "channel": 0,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "DOOR"
+     }
+    }
+   ],
+   "advanceToMs": 2000,
+   "servoWrites": [
+    {
+     "channel": 0,
+     "angle": 90
+    }
+   ],
+   "expect": [
+    {
+     "atMs": 700,
+     "correlationId": "a1",
+     "channel": 0,
+     "ok": true,
+     "detail": "",
+     "state": "open",
+     "angle": 90,
+     "elapsedMs": 700
+    }
+   ]
+  },
+  {
+   "name": "cerrar la puerta tras abrirla",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "a1",
+      "channel": 0,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "DOOR"
+     }
+    },
+    {
+     "atMs": 1000,
+     "command": {
+      "type": "command",
+      "correlationId": "a2",
+      "channel": 0,
+      "action": "close",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "DOOR"
+     }
+    }
+   ],
+   "advanceToMs": 3000,
+   "servoWrites": [
+    {
+     "channel": 0,
+     "angle": 90
+    },
+    {
+     "channel": 0,
+     "angle": 0
+    }
+   ],
+   "expect": [
+    {
+     "atMs": 700,
+     "correlationId": "a1",
+     "channel": 0,
+     "ok": true,
+     "detail": "",
+     "state": "open",
+     "angle": 90,
+     "elapsedMs": 700
+    },
+    {
+     "atMs": 1700,
+     "correlationId": "a2",
+     "channel": 0,
+     "ok": true,
+     "detail": "",
+     "state": "closed",
+     "angle": 0,
+     "elapsedMs": 700
+    }
+   ]
+  },
+  {
+   "name": "encender la luz",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "l1",
+      "channel": 3,
+      "action": "on",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:13",
+      "kind": "LIGHT"
+     }
+    }
+   ],
+   "advanceToMs": 1000,
+   "servoWrites": [
+    {
+     "channel": 3,
+     "angle": 60
+    }
+   ],
+   "expect": [
+    {
+     "atMs": 300,
+     "correlationId": "l1",
+     "channel": 3,
+     "ok": true,
+     "detail": "",
+     "state": "on",
+     "angle": 60,
+     "elapsedMs": 300
+    }
+   ]
+  },
+  {
+   "name": "abrir la cortina (recorrido largo)",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "c1",
+      "channel": 2,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:12",
+      "kind": "CURTAIN"
+     }
+    }
+   ],
+   "advanceToMs": 3000,
+   "servoWrites": [
+    {
+     "channel": 2,
+     "angle": 180
+    }
+   ],
+   "expect": [
+    {
+     "atMs": 1200,
+     "correlationId": "c1",
+     "channel": 2,
+     "ok": true,
+     "detail": "",
+     "state": "open",
+     "angle": 180,
+     "elapsedMs": 1200
+    }
+   ]
+  },
+  {
+   "name": "canales independientes a la vez",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "w1",
+      "channel": 1,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:11",
+      "kind": "WINDOW"
+     }
+    },
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "l1",
+      "channel": 3,
+      "action": "on",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:13",
+      "kind": "LIGHT"
+     }
+    }
+   ],
+   "advanceToMs": 2000,
+   "servoWrites": [
+    {
+     "channel": 1,
+     "angle": 90
+    },
+    {
+     "channel": 3,
+     "angle": 60
+    }
+   ],
+   "expect": [
+    {
+     "atMs": 300,
+     "correlationId": "l1",
+     "channel": 3,
+     "ok": true,
+     "detail": "",
+     "state": "on",
+     "angle": 60,
+     "elapsedMs": 300
+    },
+    {
+     "atMs": 700,
+     "correlationId": "w1",
+     "channel": 1,
+     "ok": true,
+     "detail": "",
+     "state": "open",
+     "angle": 90,
+     "elapsedMs": 700
+    }
+   ]
+  },
+  {
+   "name": "accion invalida para el tipo",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "x1",
+      "channel": 3,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:13",
+      "kind": "LIGHT"
+     }
+    }
+   ],
+   "advanceToMs": 500,
+   "servoWrites": [],
+   "expect": [
+    {
+     "atMs": 0,
+     "correlationId": "x1",
+     "channel": 3,
+     "ok": false,
+     "detail": "accion invalida",
+     "state": "",
+     "angle": -1,
+     "elapsedMs": 0
+    }
+   ]
+  },
+  {
+   "name": "canal inexistente",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "x2",
+      "channel": 9,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:99",
+      "kind": "DOOR"
+     }
+    }
+   ],
+   "advanceToMs": 500,
+   "servoWrites": [],
+   "expect": [
+    {
+     "atMs": 0,
+     "correlationId": "x2",
+     "channel": 9,
+     "ok": false,
+     "detail": "canal inexistente",
+     "state": "",
+     "angle": -1,
+     "elapsedMs": 0
+    }
+   ]
+  },
+  {
+   "name": "mac que no coincide",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "x3",
+      "channel": 0,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:99",
+      "kind": "DOOR"
+     }
+    }
+   ],
+   "advanceToMs": 500,
+   "servoWrites": [],
+   "expect": [
+    {
+     "atMs": 0,
+     "correlationId": "x3",
+     "channel": 0,
+     "ok": false,
+     "detail": "mac no coincide",
+     "state": "",
+     "angle": -1,
+     "elapsedMs": 0
+    }
+   ]
+  },
+  {
+   "name": "tipo que no coincide",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "x4",
+      "channel": 0,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "WINDOW"
+     }
+    }
+   ],
+   "advanceToMs": 500,
+   "servoWrites": [],
+   "expect": [
+    {
+     "atMs": 0,
+     "correlationId": "x4",
+     "channel": 0,
+     "ok": false,
+     "detail": "tipo no coincide",
+     "state": "",
+     "angle": -1,
+     "elapsedMs": 0
+    }
+   ]
+  },
+  {
+   "name": "comando caducado antes de ejecutarse",
+   "steps": [
+    {
+     "atMs": 5000,
+     "receivedAtMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "x5",
+      "channel": 0,
+      "action": "open",
+      "ttlMs": 1000,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "DOOR"
+     }
+    }
+   ],
+   "advanceToMs": 6000,
+   "servoWrites": [],
+   "expect": [
+    {
+     "atMs": 5000,
+     "correlationId": "x5",
+     "channel": 0,
+     "ok": false,
+     "detail": "caducado",
+     "state": "",
+     "angle": -1,
+     "elapsedMs": 0
+    }
+   ]
+  },
+  {
+   "name": "duplicado (QoS 1): mismo resultado y sin mover el servo otra vez",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "d1",
+      "channel": 0,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "DOOR"
+     }
+    },
+    {
+     "atMs": 1500,
+     "command": {
+      "type": "command",
+      "correlationId": "d1",
+      "channel": 0,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "DOOR"
+     }
+    }
+   ],
+   "advanceToMs": 3000,
+   "servoWrites": [
+    {
+     "channel": 0,
+     "angle": 90
+    }
+   ],
+   "expect": [
+    {
+     "atMs": 700,
+     "correlationId": "d1",
+     "channel": 0,
+     "ok": true,
+     "detail": "",
+     "state": "open",
+     "angle": 90,
+     "elapsedMs": 700
+    },
+    {
+     "atMs": 1500,
+     "correlationId": "d1",
+     "channel": 0,
+     "ok": true,
+     "detail": "",
+     "state": "open",
+     "angle": 90,
+     "elapsedMs": 700
+    }
+   ]
+  },
+  {
+   "name": "misma accion en curso: el segundo comando espera el mismo movimiento",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "f1",
+      "channel": 0,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "DOOR"
+     }
+    },
+    {
+     "atMs": 100,
+     "command": {
+      "type": "command",
+      "correlationId": "f2",
+      "channel": 0,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "DOOR"
+     }
+    }
+   ],
+   "advanceToMs": 2000,
+   "servoWrites": [
+    {
+     "channel": 0,
+     "angle": 90
+    }
+   ],
+   "expect": [
+    {
+     "atMs": 700,
+     "correlationId": "f1",
+     "channel": 0,
+     "ok": true,
+     "detail": "",
+     "state": "open",
+     "angle": 90,
+     "elapsedMs": 700
+    },
+    {
+     "atMs": 700,
+     "correlationId": "f2",
+     "channel": 0,
+     "ok": true,
+     "detail": "",
+     "state": "open",
+     "angle": 90,
+     "elapsedMs": 600
+    }
+   ]
+  },
+  {
+   "name": "accion contraria en curso: el nuevo reemplaza al anterior",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "r1",
+      "channel": 0,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "DOOR"
+     }
+    },
+    {
+     "atMs": 200,
+     "command": {
+      "type": "command",
+      "correlationId": "r2",
+      "channel": 0,
+      "action": "close",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "DOOR"
+     }
+    }
+   ],
+   "advanceToMs": 3000,
+   "servoWrites": [
+    {
+     "channel": 0,
+     "angle": 90
+    },
+    {
+     "channel": 0,
+     "angle": 0
+    }
+   ],
+   "expect": [
+    {
+     "atMs": 200,
+     "correlationId": "r1",
+     "channel": 0,
+     "ok": false,
+     "detail": "reemplazado",
+     "state": "",
+     "angle": -1,
+     "elapsedMs": 0
+    },
+    {
+     "atMs": 900,
+     "correlationId": "r2",
+     "channel": 0,
+     "ok": true,
+     "detail": "",
+     "state": "closed",
+     "angle": 0,
+     "elapsedMs": 700
+    }
+   ]
+  },
+  {
+   "name": "repetir la misma accion ya terminada: se reenvia el angulo y espera poco",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "p1",
+      "channel": 0,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "DOOR"
+     }
+    },
+    {
+     "atMs": 1000,
+     "command": {
+      "type": "command",
+      "correlationId": "p2",
+      "channel": 0,
+      "action": "open",
+      "ttlMs": 5000,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "DOOR"
+     }
+    }
+   ],
+   "advanceToMs": 3000,
+   "servoWrites": [
+    {
+     "channel": 0,
+     "angle": 90
+    },
+    {
+     "channel": 0,
+     "angle": 90
+    }
+   ],
+   "expect": [
+    {
+     "atMs": 700,
+     "correlationId": "p1",
+     "channel": 0,
+     "ok": true,
+     "detail": "",
+     "state": "open",
+     "angle": 90,
+     "elapsedMs": 700
+    },
+    {
+     "atMs": 1150,
+     "correlationId": "p2",
+     "channel": 0,
+     "ok": true,
+     "detail": "",
+     "state": "open",
+     "angle": 90,
+     "elapsedMs": 150
+    }
+   ]
+  },
+  {
+   "name": "sin accion no es un comando valido",
+   "steps": [
+    {
+     "atMs": 0,
+     "command": {
+      "type": "command",
+      "correlationId": "b1",
+      "channel": 0,
+      "mac": "AA:BB:CC:00:00:10",
+      "kind": "DOOR",
+      "ttlMs": 5000
+     }
+    }
+   ],
+   "advanceToMs": 500,
+   "servoWrites": [],
+   "expect": [
+    {
+     "atMs": 0,
+     "correlationId": "b1",
+     "channel": 0,
+     "ok": false,
+     "detail": "comando invalido",
+     "state": "",
+     "angle": -1,
+     "elapsedMs": 0
+    }
+   ]
+  }
+ ]
+}

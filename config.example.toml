@@ -1,0 +1,71 @@
+# Edge de actuadores de Alivia. Copia a config.toml y ajusta.
+
+[server]  # WebSocket al que se conecta el ESP32 de actuadores
+host = "0.0.0.0"
+port = 8766                 # el edge de voz usa 8765
+path = "/ws"
+token = ""                  # o variable de entorno ALIVIA_ACTUATOR_WS_TOKEN (el mismo valor va en Secrets.h del ESP32)
+hello_timeout_s = 5.0
+ping_interval_s = 10.0
+ping_timeout_s = 10.0
+
+[bluetooth]  # opcional: el ESP32 es servidor SPP "Alivia-Act-01" y el PC abre el puerto serie
+enabled = false
+# [[bluetooth.links]]
+# mac = "00:11:22:33:44:20"   # MAC base del ESP32 (la que imprime al arrancar)
+# port = "COM5"               # Windows | /dev/rfcomm0 (Linux) | /dev/cu.Alivia-Act-01 (macOS)
+# baudrate = 115200
+
+[mqtt]  # mismo broker que usa el edge de voz
+host = "127.0.0.1"
+port = 1883
+username = ""
+password = ""
+tls = false
+client_id = "alivia-actuator-edge"
+
+[dispatch]
+exec_timeout_s = 4.0        # debe ser MENOR que [dialog].exec_timeout_s del edge de voz (5.0 por defecto)
+dedup_ttl_s = 300.0
+dedup_max = 512
+
+# Tabla local de dispositivos. En el backend, cada servo es un dispositivo con su MAC logica
+# (la imprime el firmware al arrancar). Mas adelante esta tabla vendra del backend.
+[[devices]]
+device_id = 10
+mac = "02:11:22:33:44:21"
+type = "DOOR"
+status = "IN_USE"
+room_key = "entrada"
+function = "Puerta principal"
+
+[[devices]]
+device_id = 11
+mac = "02:11:22:33:44:22"
+type = "WINDOW"
+status = "IN_USE"
+room_key = "sala"
+function = "Ventana de la sala"
+
+[[devices]]
+device_id = 12
+mac = "02:11:22:33:44:23"
+type = "CURTAIN"
+status = "IN_USE"
+room_key = "sala"
+function = "Cortina de la sala"
+
+[[devices]]
+device_id = 13
+mac = "02:11:22:33:44:24"
+type = "LIGHT"
+status = "IN_USE"
+room_key = "sala"
+function = "Luz de la sala"
+
+[http]  # API de salud y diagnostico (Flask), solo lectura
+enabled = true
+host = "127.0.0.1"          # 0.0.0.0 para verla desde otra maquina; en ese caso define token
+port = 8780
+token = ""                  # si se define: Authorization: Bearer <token> (excepto /health)
+errors_kept = 200
