@@ -44,9 +44,14 @@ class EmbeddedHub:
         self._sessions: dict[str, Session] = {}  # por MAC base del ESP32
         self._by_device: dict[int, Session] = {}  # deviceId -> sesion que lo maneja
         self._listeners: list[Callable[[], None]] = []
+        self._telemetry_listeners: list[Callable[[str, list[int], dict], None]] = []
         self._snapshot: tuple[dict, ...] = ()  # vista inmutable para otros hilos (API HTTP): se reemplaza entera
 
     # ---- consultas ----
+    def add_telemetry_listener(self, fn: Callable[[str, list[int], dict], None]) -> None:
+        """fn(embedded_id, device_ids, telemetry) con cada telemetría de un embebido (por ejemplo su batería)."""
+        self._telemetry_listeners.append(fn)
+
     def add_listener(self, fn: Callable[[], None]) -> None:
         self._listeners.append(fn)
 
@@ -203,6 +208,12 @@ class EmbeddedHub:
             session.telemetry = {k: msg[k] for k in allowed if isinstance(msg.get(k), (int, float, str))}
             session.telemetry_at = time.time()
             self._refresh()
+            device_ids = sorted(d.device_id for d in session.channels.values())
+            for fn in self._telemetry_listeners:
+                try:
+                    fn(session.embedded_id, device_ids, dict(session.telemetry))
+                except Exception:
+                    log.exception("un oyente de telemetría falló")
             return
         if kind != "result":
             log.debug("[%s] mensaje %r ignorado", session.embedded_id, kind)

@@ -77,12 +77,27 @@ class DeviceCfg:
 
 
 @dataclass
+class BackendCfg:
+    """Eventos del hogar hacia el backend (POST /api/v1/edge/events): fallas de los actuadores y batería baja."""
+    enabled: bool = False
+    base_url: str = "http://127.0.0.1:8080"
+    credential: str = ""          # <edgeId>.<secreto>, o variable de entorno ALIVIA_EDGE_CREDENTIAL
+    request_timeout_s: float = 10.0
+    retry_max_s: float = 60.0     # espera máxima entre reintentos de un evento que no se pudo entregar
+    queue_max: int = 200          # eventos pendientes que se guardan sin red; los más viejos se descartan
+    low_battery_pct: int = 20     # se avisa una vez al bajar de este nivel...
+    battery_rearm_pct: int = 30   # ...y se vuelve a avisar solo después de recargar sobre este
+    failure_cooldown_s: float = 600.0  # una falla del mismo dispositivo se avisa a lo más una vez en este tiempo
+
+
+@dataclass
 class Config:
     server: ServerCfg = field(default_factory=ServerCfg)
     bluetooth: BluetoothCfg = field(default_factory=BluetoothCfg)
     mqtt: MqttCfg = field(default_factory=MqttCfg)
     dispatch: DispatchCfg = field(default_factory=DispatchCfg)
     http: HttpCfg = field(default_factory=HttpCfg)
+    backend: BackendCfg = field(default_factory=BackendCfg)
     devices: list[DeviceCfg] = field(default_factory=list)  # tabla local (más adelante vendrá del backend)
     base_dir: Path = field(default_factory=Path.cwd)
 
@@ -102,7 +117,8 @@ def load_config(path: str | os.PathLike[str]) -> Config:
     with p.open("rb") as fh:
         raw = tomllib.load(fh)
     cfg = Config(base_dir=p.parent)
-    for name, cls in (("server", ServerCfg), ("mqtt", MqttCfg), ("dispatch", DispatchCfg), ("http", HttpCfg)):
+    for name, cls in (("server", ServerCfg), ("mqtt", MqttCfg), ("dispatch", DispatchCfg), ("http", HttpCfg),
+                      ("backend", BackendCfg)):
         if name in raw:
             setattr(cfg, name, _build(cls, raw[name]))
     if "bluetooth" in raw:
@@ -111,11 +127,15 @@ def load_config(path: str | os.PathLike[str]) -> Config:
         cfg.bluetooth = _build(BluetoothCfg, bt)
         cfg.bluetooth.links = links
     cfg.devices = [_build(DeviceCfg, item) for item in raw.get("devices", [])]
-    unknown = set(raw) - {"server", "mqtt", "dispatch", "http", "bluetooth", "devices"}
+    unknown = set(raw) - {"server", "mqtt", "dispatch", "http", "bluetooth", "devices", "backend"}
     if unknown:
         raise ValueError(f"secciones desconocidas en config.toml: {sorted(unknown)}")
     if not cfg.server.token:
         cfg.server.token = os.environ.get("ALIVIA_ACTUATOR_WS_TOKEN", "")
     if not cfg.server.token:
         raise ValueError("Falta el token: define [server].token o la variable ALIVIA_ACTUATOR_WS_TOKEN")
+    if not cfg.backend.credential:
+        cfg.backend.credential = os.environ.get("ALIVIA_EDGE_CREDENTIAL", "")
+    if cfg.backend.enabled and not cfg.backend.credential:
+        raise ValueError("[backend] está activo pero falta la credencial: [backend].credential o ALIVIA_EDGE_CREDENTIAL")
     return cfg

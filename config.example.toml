@@ -24,6 +24,14 @@ password = ""
 tls = false
 client_id = "alivia-actuator-edge"
 
+[backend]  # avisos al familiar: fallas de los actuadores y batería baja del ESP32 (POST /api/v1/edge/events)
+enabled = false
+base_url = "http://127.0.0.1:8080"
+credential = ""             # <edgeId>.<secreto> de este edge (de ACTUATOR), o variable ALIVIA_EDGE_CREDENTIAL
+low_battery_pct = 20        # se avisa una vez al bajar de este nivel
+battery_rearm_pct = 30      # y otra vez solo después de recargar por encima de este
+failure_cooldown_s = 600.0  # una falla del mismo dispositivo se avisa a lo más una vez en este tiempo
+
 [dispatch]
 exec_timeout_s = 4.0        # debe ser MENOR que [dialog].exec_timeout_s del edge de voz (5.0 por defecto)
 dedup_ttl_s = 300.0
