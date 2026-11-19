@@ -143,6 +143,17 @@ class FakeEsp32:
         await self._send(res)
 
 
+def _telemetry(a: argparse.Namespace) -> dict | None:
+    if a.battery_mv is None and a.battery_pct is None:
+        return None
+    t: dict = {"uptimeMs": 1000, "freeHeap": 180000, "rssi": -55}
+    if a.battery_mv is not None:
+        t["batteryMv"] = a.battery_mv
+    if a.battery_pct is not None:
+        t["batteryPct"] = a.battery_pct
+    return t
+
+
 def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--url", default="ws://127.0.0.1:8766/ws")
@@ -153,6 +164,7 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--fail", action="append", default=[], metavar="CANAL=DETALLE", help="el canal responde ok:false")
     p.add_argument("--silent", action="append", type=int, default=[], metavar="CANAL", help="el canal nunca responde")
     p.add_argument("--battery-mv", type=int, default=None, help="envia telemetria con este voltaje de bateria")
+    p.add_argument("--battery-pct", type=int, default=None, help="envia telemetria con este porcentaje de bateria")
     p.add_argument("--speed", type=float, default=1.0, help="1.0 tiempo real; 0.1 diez veces mas rapido")
     return p.parse_args()
 
@@ -163,7 +175,7 @@ async def _main() -> None:
     fail = {int(k): v for k, v in (x.split("=", 1) for x in a.fail)}
     sim = FakeEsp32(a.url, a.token, base_mac=a.base_mac, time_scale=a.speed, fail=fail, silent=set(a.silent),
                     channel_macs=macs,
-                    telemetry=({"uptimeMs": 1000, "freeHeap": 180000, "rssi": -55, "batteryMv": a.battery_mv} if a.battery_mv else None))
+                    telemetry=_telemetry(a))
     delay = 1.0
     while True:  # reconecta como el firmware real (espera creciente 1 s a 10 s)
         try:

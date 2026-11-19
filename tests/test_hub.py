@@ -201,3 +201,15 @@ async def test_wifi_tiene_prioridad_sobre_bluetooth(stack):
     assert hub.online_summary()[0]["link"] == "ws"
     t.cancel()
     await link.close()
+
+
+async def test_la_telemetria_llega_a_los_oyentes_con_los_dispositivos_del_embebido(stack):
+    hub, table, url = stack
+    seen = []
+    hub.add_telemetry_listener(lambda esp_id, devices, telemetry: seen.append((devices, telemetry.get("batteryPct"))))
+    hub.add_telemetry_listener(lambda *a: 1 / 0)  # un oyente que falla no afecta a los demas
+    esp, task = await connect(url, telemetry={"batteryPct": 12, "rssi": -60})
+    await asyncio.wait_for(esp.ready.wait(), 3)
+    await wait_until(lambda: seen)
+    assert seen == [([10, 11, 12, 13], 12)]
+    task.cancel()

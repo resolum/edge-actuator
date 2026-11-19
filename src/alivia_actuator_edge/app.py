@@ -14,6 +14,9 @@ from alivia_actuator_edge.shared.diagnostics import CompositeReporter, Diagnosti
 from alivia_actuator_edge.embedded.application.hub import EmbeddedHub
 from alivia_actuator_edge.embedded.interfaces.transports.bluetooth import BluetoothConnector
 from alivia_actuator_edge.embedded.interfaces.transports.websocket import serve_ws
+from alivia_actuator_edge.events.domain import BatteryWatch, FailureFilter
+from alivia_actuator_edge.events.reporter import BatteryEventReporter, EventReporter, FailureEventReporter
+from alivia_actuator_edge.events.sender import HttpEventSender
 from alivia_actuator_edge.shared.config import Config, load_config
 
 log = logging.getLogger("alivia.actuator")
@@ -26,7 +29,17 @@ async def run(cfg: Config, stop: asyncio.Event | None = None, ready: asyncio.Eve
     hub = EmbeddedHub(table, cfg.server)
     mqtt_gw = MqttGateway(cfg.mqtt, hub.online_summary)
     diagnostics = Diagnostics(cfg.http.errors_kept)
-    service = ActuatorService(table, hub, mqtt_gw, CompositeReporter(LogReporter(), diagnostics), cfg.dispatch)
+    reporters = [LogReporter(), diagnostics]
+    events = None
+    if cfg.backend.enabled:  # fallas y batería baja llegan al familiar como notificación
+        b = cfg.backend
+        events = EventReporter(HttpEventSender(b.base_url, b.credential, b.request_timeout_s),
+                               queue_max=b.queue_max, retry_max_s=b.retry_max_s)
+        reporters.append(FailureEventReporter(events, FailureFilter(b.failure_cooldown_s)))
+        hub.add_telemetry_listener(BatteryEventReporter(events, BatteryWatch(b.low_battery_pct, b.battery_rearm_pct)).on_telemetry)
+        events.start()
+        log.info("Eventos del hogar hacia %s (batería baja <= %d%%)", b.base_url, b.low_battery_pct)
+    service = ActuatorService(table, hub, mqtt_gw, CompositeReporter(*reporters), cfg.dispatch)
     hub.add_listener(mqtt_gw.publish_status)  # el edge de voz se entera si un ESP32 entra o sale
 
     ws_server = await serve_ws(cfg.server, hub.serve_link)
@@ -49,6 +62,8 @@ async def run(cfg: Config, stop: asyncio.Event | None = None, ready: asyncio.Eve
     try:
         await stop.wait()
     finally:
+        if events:
+            await events.stop()
         if http:
             http.stop()
         if bt:

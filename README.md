@@ -121,10 +121,24 @@ pytest            # 59 pruebas: modelo, servicio, hub (WebSocket y Bluetooth con
 Las pruebas de punta a punta levantan un broker `amqtt`, el edge completo y un ESP32 falso. Los fixtures de
 `docs/fixtures` son los mismos que ejecuta el firmware en PC (`test/host` del repo `embebido-actuadores`).
 
+## Avisos al familiar (fallas y batería baja)
+
+Con `[backend] enabled = true` y la credencial del edge (`ALIVIA_EDGE_CREDENTIAL=<edgeId>.<secreto>`), el edge informa
+al backend en `POST /api/v1/edge/events`, y el backend envía una notificación push a los familiares a cargo del hogar:
+
+- **Falla de un dispositivo** (`DEVICE_FAILURE`): una orden que no se cumplió en el servo (el ESP32 respondió `ok:false`,
+  no respondió a tiempo o estaba desconectado). Las órdenes rechazadas antes de llegar al servo (caducadas, no autorizadas
+  o con una acción inválida) no se avisan. Se avisa a lo más una vez cada `failure_cooldown_s` por dispositivo.
+- **Batería baja** (`LOW_BATTERY`): con la `batteryPct` que el ESP32 envía en su `telemetry`. Se avisa una vez al bajar de
+  `low_battery_pct` y no otra vez hasta que se recargue por encima de `battery_rearm_pct`.
+
+Los eventos se entregan en orden desde una cola en memoria, con reintentos crecientes mientras no haya red. Cada evento
+lleva un `eventId`; si se reenvía, el backend no vuelve a notificar.
+
 ## Pendiente (etapa 2)
 
-- Reportar al backend el resultado de cada acción. Hoy `LogReporter` solo lo registra. Falta el endpoint en el contexto
-  `tracking` del backend (está vacío) y un cliente con reintentos y cola (outbox) para no perder resultados sin red.
+- Reportar al backend el resultado de cada acción exitosa (historial). Hoy `LogReporter` solo lo registra.
+- Guardar en disco la cola de eventos, para no perderlos si el edge se reinicia sin red.
 - Tabla de dispositivos desde el backend (long poll con ETag, como el edge de voz).
 - Confirmación real con sensor (fin de carrera o contacto magnético): hoy el éxito es "el servo llegó al ángulo y pasó su
   tiempo de asentamiento". Solo cambiaría el firmware.
